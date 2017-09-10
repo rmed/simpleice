@@ -1,0 +1,97 @@
+// MIT License
+//
+// Copyright (c) 2017 Rafael Medina García <rafamedgar@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/// Application commands
+
+use std::error::Error;
+
+use console::{Term, style};
+use dialoguer::{Editor, Input};
+use ini::Ini;
+
+use parser;
+use parser::Ice;
+
+/// Create a new ICE mail
+///
+/// This function asks the user for a short description and the contents of the
+/// mail.
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn create_ice(term: &Term, conf: &Ini) {
+    term.write_line("Creating a new ICE mail");
+    term.write_line("You need to provide a short description and message to send\n");
+
+    // Ask for description
+    let description = Input::new("Please specify a short description").interact().unwrap();
+
+    // Ask for message
+    term.write_line("Opening your default editor to write the message...");
+    let message = Editor::new().edit("Please write your message").unwrap();
+
+    if message.is_none() {
+        // Need a message
+        term.write_line("You need to specify a message. Aborting...");
+        return;
+    }
+
+    // Create new ICE
+    let new_ice = Ice::new(description, message.unwrap());
+
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        // File may not exist yet, will be created later
+        Err(_) => Vec::new()
+    };
+    ices.push(new_ice);
+
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => term.write_line("New ICE mail created"),
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
+}
+
+/// List ICE mails present in the JSON file
+///
+/// The output also shows whether an ICE is enabled and the date when it is
+/// scheduled to be sent.
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn list_ices(term: &Term, conf: &Ini) {
+    let ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    for ice in ices {
+        term.write_line(ice.get_status_line().as_str());
+    }
+}
