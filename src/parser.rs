@@ -29,7 +29,7 @@ use serde_json;
 use console::style;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Ice {
     description: String,
     message: String,
@@ -60,12 +60,50 @@ impl Ice {
         self.description.clone()
     }
 
+    /// Update the short description of the ICE mail
+    ///
+    /// # Arguments
+    ///
+    /// * `description` - New description to use
+    pub fn set_description(&mut self, description: String) {
+        self.description = description;
+    }
+
     /// Get the date in dd/mm/yyyy format
     pub fn get_date(&self) -> String {
         match self.send_date {
             Some(v) => v.format("%d/%m/%Y").to_string(),
             None => "Unknown".to_string()
         }
+    }
+
+    /// Get the mail recipients
+    pub fn get_emails(&self) -> &Vec<String> {
+        &self.emails
+    }
+
+    /// Update the recipients of the ICE mail
+    ///
+    /// # Arguments
+    ///
+    /// * `emails` - New recipients
+    pub fn set_emails(&mut self, emails: &Vec<String>) {
+        self.emails.clear();
+        self.emails.extend_from_slice(emails);
+    }
+
+    /// Get the mail content
+    pub fn get_message(&self) -> String {
+        self.message.clone()
+    }
+
+    /// Update the short description of the ICE mail
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - New message to use
+    pub fn set_message(&mut self, message: String) {
+        self.message = message;
     }
 
     /// Get a short line specifying the status of the ICE and the scheduled

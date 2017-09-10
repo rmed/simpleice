@@ -54,6 +54,7 @@ fn main() {
                 "create-config",
                 "check",
                 "daemon",
+                "edit",
                 "list",
                 "new",
                 "remove",
@@ -66,6 +67,7 @@ fn main() {
                 create-config       Create empty configuration file\n\
                 check               Check if there are scheduled emails to send\n\
                 daemon              Run in daemon mode\n\
+                edit                Edit an existing ICE mail\n\
                 list                List existing ICE mails\n\
                 new                 Create new ICE mail\n\
                 remove              Remove an ICE mail"))
@@ -100,6 +102,7 @@ fn main() {
     match command {
         "check" => (),
         "daemon" => (),
+        "edit" => commands::edit_ice(&term, &conf),
         "list" => commands::list_ices(&term, &conf),
         "new" => commands::create_ice(&term, &conf),
         "remove" => commands::remove_ice(&term, &conf),

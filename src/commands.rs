@@ -73,6 +73,79 @@ pub fn create_ice(term: &Term, conf: &Ini) {
     };
 }
 
+/// Show a list of ICE mails and select one to edit
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn edit_ice(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Select an ICE to edit
+    let mut selection = Select::new();
+    for ice in &ices {
+        selection.item(ice.get_description().as_str());
+    }
+
+    let selected = selection.default(0).interact().unwrap();
+    let mut edited = ices[selected].clone();
+
+    term.write_line(format!("Editing '{}'\n", edited.get_description()).as_str());
+
+    // Description
+    if Confirmation::new("Do you want to edit the short description?").interact().unwrap() {
+        let new_description = Input::new("Please specify a short description")
+            .default(edited.get_description().as_str())
+            .interact().unwrap();
+
+        edited.set_description(new_description);
+    }
+
+    // Message
+    if Confirmation::new("Do you want to edit the message?").interact().unwrap() {
+        let new_message = Editor::new().edit(edited.get_message().as_str()).unwrap();
+
+        if new_message.is_none() {
+            term.write_line("No message provided, using the original one");
+        } else {
+            edited.set_message(new_message.unwrap());
+        }
+    }
+
+    // Addresses
+    if Confirmation::new("Do you want to edit the recipients?").interact().unwrap() {
+        let new_emails = Input::new("Please specify recipients (comma-separated)")
+            .default(edited.get_emails().join(",").as_str())
+            .interact().unwrap();
+
+        let mut email_list = Vec::new();
+        for email in new_emails.split(",") {
+            email_list.push(email.trim().to_string());
+        }
+
+        edited.set_emails(&email_list);
+    }
+
+    // Save edited ICE
+    ices[selected] = edited;
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => term.write_line("ICE mail updated"),
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
+}
+
 /// List ICE mails present in the JSON file
 ///
 /// The output also shows whether an ICE is enabled and the date when it is
