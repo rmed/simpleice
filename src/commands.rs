@@ -25,7 +25,7 @@
 use std::error::Error;
 
 use console::{Term, style};
-use dialoguer::{Editor, Input};
+use dialoguer::{Confirmation, Editor, Input, Select};
 use ini::Ini;
 
 use parser;
@@ -91,7 +91,61 @@ pub fn list_ices(term: &Term, conf: &Ini) {
         }
     };
 
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
     for ice in ices {
         term.write_line(ice.get_status_line().as_str());
     }
+}
+
+/// Show a list of ICE mails and select one to remove
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn remove_ice(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Select an ICE to remove
+    let mut selection = Select::new();
+    for ice in &ices {
+        selection.item(ice.get_description().as_str());
+    }
+
+    let selected = selection.default(0).interact().unwrap();
+
+    // Ask for confirmation
+    if !Confirmation::new(format!(
+        "Do you want to remove '{}'?", ices[selected].get_description()
+    ).as_str()).interact().unwrap() {
+        term.write_line("Operation cancelled");
+        return;
+    }
+
+    // Remove ICE
+    let removed = ices.remove(selected);
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => {
+            term.write_line(
+                format!("ICE mail '{}' removed", removed.get_description())
+                .as_str()
+            )
+        },
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
 }

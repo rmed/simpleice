@@ -56,6 +56,7 @@ fn main() {
                 "daemon",
                 "list",
                 "new",
+                "remove",
             ])
             .hide_possible_values(true)
             .required(true)
@@ -66,7 +67,8 @@ fn main() {
                 check               Check if there are scheduled emails to send\n\
                 daemon              Run in daemon mode\n\
                 list                List existing ICE mails\n\
-                new                 Create new ICE mail"))
+                new                 Create new ICE mail\n\
+                remove              Remove an ICE mail"))
         .get_matches();
 
     let term = Term::stdout();
@@ -100,6 +102,7 @@ fn main() {
         "daemon" => (),
         "list" => commands::list_ices(&term, &conf),
         "new" => commands::create_ice(&term, &conf),
+        "remove" => commands::remove_ice(&term, &conf),
         _ => ()
     }
 }

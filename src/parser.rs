@@ -55,6 +55,11 @@ impl Ice {
         }
     }
 
+    /// Get the short description of the ICE mail
+    pub fn get_description(&self) -> String {
+        self.description.clone()
+    }
+
     /// Get the date in dd/mm/yyyy format
     pub fn get_date(&self) -> String {
         match self.send_date {
