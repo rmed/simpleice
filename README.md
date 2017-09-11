@@ -1,4 +1,4 @@
-# simpleice
+# simpleice [![Crates.io](https://img.shields.io/crates/v/simpleice.svg)](https://crates.io/crates/simpleice)
 
 Schedule email delivery In Case of Emergency (ICE).
 
