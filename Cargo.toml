@@ -1,5 +1,6 @@
 [package]
 name = "simpleice"
+description = "Schedule emails in case of emergency"
 version = "0.1.0"
 authors = ["Rafael Medina García <rafamedgar@gmail.com>"]
 license = "MIT"
