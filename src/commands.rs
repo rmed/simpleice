@@ -356,3 +356,45 @@ pub fn remove_ice(term: &Term, conf: &Ini) {
         Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
     };
 }
+
+/// Show the details of a single ICE mail
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn show_ice(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Select an ICE to show
+    let mut selection = Select::new();
+    for ice in &ices {
+        selection.item(ice.get_description().as_str());
+    }
+
+    term.write_line("Select an ICE mail to show\n");
+    let selected = selection.default(0).interact().unwrap();
+
+    // Show details
+    term.write_line(ices[selected].get_status_line().as_str());
+    term.write_line("");
+    term.write_line(
+        format!(
+            "Recipients: {}",
+            ices[selected].get_emails().join(",")
+        ).as_str()
+    );
+    term.write_line("");
+    term.write_line(ices[selected].get_message().as_str());
+}

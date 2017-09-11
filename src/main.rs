@@ -60,6 +60,7 @@ fn main() {
                 "list",
                 "new",
                 "remove",
+                "show",
             ])
             .hide_possible_values(true)
             .required(true)
@@ -74,7 +75,8 @@ fn main() {
                 edit                Edit an existing ICE mail\n\
                 list                List existing ICE mails\n\
                 new                 Create new ICE mail\n\
-                remove              Remove an ICE mail"))
+                remove              Remove an ICE mail\n\
+                show                Show details of an ICE mail"))
         .get_matches();
 
     let term = Term::stdout();
@@ -112,6 +114,7 @@ fn main() {
         "list" => commands::list_ices(&term, &conf),
         "new" => commands::create_ice(&term, &conf),
         "remove" => commands::remove_ice(&term, &conf),
+        "show" => commands::show_ice(&term, &conf),
         _ => ()
     }
 }
