@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//! ICE mail parser
+
 use std::fs::File;
 use std::path::Path;
 
@@ -148,7 +150,6 @@ impl Ice {
     /// Create an email from an ICE structure
     pub fn to_email(&self) -> EmailBuilder {
         let mut builder = EmailBuilder::new()
-            .subject("[simpleice] ICE mail")
             .body(self.get_message().as_str());
 
         for recipient in &self.emails {

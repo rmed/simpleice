@@ -20,7 +20,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/// Application launcher
+//! simpleice is a small tool to schedule the delivery of emails in case of
+//! emergency. Once activated, these emails will be sent at the date and time
+//! specified unless they are explicitly deactivated.
+//!
+//! # Commands
+//!
+//! There are a series of commands available in simpleice:
+//!
+//! - `check`: looks through the list of mails and sends any pending mail
+//! - `daemon`: periodically (every hour) runs the `check` command and sends
+//! emails
+//! - `activate`: enables delivery for a specific mail and sets date and time
+//! in which the mail should be delivered
+//! - `create-config`: creates an empty configuration file in the home folder
+//! of the user
+//! - `deactivate`: disables delivery for a specific mail
+//! - `edit`: edits a mail and sets recipients of the message
+//! - `list`: lists all existing mails and their current status
+//! - `new`: creates a new mail
+//! - `remove`: removes a mail from the list
+//! - `show`: shows the contents of a specific mail
+
+//! Application launcher
 
 extern crate chrono;
 #[macro_use]
@@ -52,10 +74,10 @@ fn main() {
         .about("Schedule emails in case of emergency")
         .arg(Arg::with_name("command")
             .possible_values(&[
-                "activate",
-                "create-config",
                 "check",
                 "daemon",
+                "activate",
+                "create-config",
                 "deactivate",
                 "edit",
                 "list",
@@ -68,10 +90,10 @@ fn main() {
             .takes_value(true)
             .long_help("\
                 Available commands:\n\n\
-                activate            Set delivery date and activate an ICE mail\n\
-                create-config       Create empty configuration file\n\
                 check               Check if there are scheduled emails to send\n\
                 daemon              Run in daemon mode\n\
+                activate            Set delivery date and activate an ICE mail\n\
+                create-config       Create empty configuration file\n\
                 deactivate          Deactivate an active ICE mail\n\
                 edit                Edit an existing ICE mail\n\
                 list                List existing ICE mails\n\

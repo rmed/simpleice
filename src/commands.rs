@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/// Application commands
+//! Application commands
 
 use std::error::Error;
 use std::{thread, time};
@@ -126,6 +126,7 @@ pub fn check(term: &Term, conf: &Ini) {
         if send_date.unwrap() <= now {
             // Send mail
             let mut builder = ice.to_email();
+            builder.set_subject("[simpleice] ICE mail");
             builder.add_from(sender.as_str());
 
             term.write_line(
