@@ -27,6 +27,7 @@ extern crate chrono;
 extern crate clap;
 extern crate console;
 extern crate dialoguer;
+extern crate lettre;
 extern crate ini;
 extern crate serde;
 extern crate serde_json;
@@ -98,7 +99,7 @@ fn main() {
         Err(e) => {
             term.write_line(e);
             term.write_line(
-                "You can create an empty configuration file it using the `create-config` command"
+                "You can create an empty configuration file using the `create-config` command"
             );
             return;
         }
@@ -107,7 +108,7 @@ fn main() {
     // Check command to run
     match command {
         "activate" => commands::activate_ice(&term, &conf),
-        "check" => (),
+        "check" => commands::check(&term, &conf),
         "daemon" => (),
         "deactivate" => commands::deactivate_ice(&term, &conf),
         "edit" => commands::edit_ice(&term, &conf),

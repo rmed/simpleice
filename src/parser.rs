@@ -25,6 +25,7 @@ use std::path::Path;
 
 use chrono::prelude::*;
 use ini::Ini;
+use lettre::email::EmailBuilder;
 use serde_json;
 use console::style;
 
@@ -69,12 +70,8 @@ impl Ice {
         self.description = description;
     }
 
-    /// Get the date in yyyy-mm-dd format
-    pub fn get_date(&self) -> String {
-        match self.send_date {
-            Some(v) => v.format("%F %R").to_string(),
-            None => "Unknown".to_string()
-        }
+    pub fn get_date(&self) -> Option<DateTime<Local>> {
+        self.send_date
     }
 
     /// Update the date of the ICE mail
@@ -84,6 +81,14 @@ impl Ice {
     /// * `new_date` - New date to use (or None if the mail is disabled)
     pub fn set_date(&mut self, new_date: Option<DateTime<Local>>) {
         self.send_date = new_date;
+    }
+
+    /// Get the date in yyyy-mm-dd format
+    pub fn get_date_string(&self) -> String {
+        match self.send_date {
+            Some(v) => v.format("%F %R").to_string(),
+            None => "Unknown".to_string()
+        }
     }
 
     /// Get the mail recipients
@@ -116,7 +121,7 @@ impl Ice {
     }
 
     /// Get the status of the ICE mail
-    pub fn get_status(&self) -> bool {
+    pub fn is_active(&self) -> bool {
         self.active
     }
 
@@ -125,7 +130,7 @@ impl Ice {
     /// # Arguments
     ///
     /// * `status` - New status for the ICE mail
-    pub fn set_status(&mut self, status: bool) {
+    pub fn set_active(&mut self, status: bool) {
         self.active = status;
     }
 
@@ -136,8 +141,21 @@ impl Ice {
             "{} ~> {} {}",
             self.description,
             if self.active {style("Active").green()} else {style("Inactive").red()},
-            if self.active {format!("({})", self.get_date())} else {"".to_string()}
+            if self.active {format!("({})", self.get_date_string())} else {"".to_string()}
         )
+    }
+
+    /// Create an email from an ICE structure
+    pub fn to_email(&self) -> EmailBuilder {
+        let mut builder = EmailBuilder::new()
+            .subject("[simpleice] ICE mail")
+            .body(self.get_message().as_str());
+
+        for recipient in &self.emails {
+            builder.add_to(recipient.as_str());
+        }
+
+        builder
     }
 }
 

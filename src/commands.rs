@@ -28,9 +28,123 @@ use chrono::prelude::*;
 use console::{Term, style};
 use dialoguer::{Confirmation, Editor, Input, Select};
 use ini::Ini;
+use lettre::email::EmailBuilder;
+use lettre::transport::smtp::{SecurityLevel, SmtpTransport,
+SmtpTransportBuilder};
+use lettre::transport::EmailTransport;
 
 use parser;
 use parser::Ice;
+
+/// Check if there are ICE mails to send
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn check(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Parse email configuration
+    let mail_section = match conf.section(Some("mail".to_owned())) {
+        Some(v) => v,
+        None => {
+            term.write_line("No mail configuration found");
+            return;
+        }
+    };
+
+    let server = match mail_section.get("server") {
+        Some(v) => v,
+        None => {
+            term.write_line("No server address found");
+            return;
+        }
+    };
+
+    let port = match mail_section.get("port") {
+        Some(v) => v.parse::<u16>().unwrap(),
+        None => {
+            term.write_line("No server port found");
+            return;
+        }
+    };
+
+    let sender = match mail_section.get("address") {
+        Some(v) => v,
+        None => {
+            term.write_line("No sender address found");
+            return;
+        }
+    };
+
+    let password = match mail_section.get("password") {
+        Some(v) => v,
+        None => {
+            term.write_line("No server password found");
+            return;
+        }
+    };
+
+    let mut mailer = SmtpTransportBuilder::new((server.as_str(), port))
+        .unwrap()
+        .credentials(sender.as_str(), password.as_str())
+        .security_level(SecurityLevel::AlwaysEncrypt)
+        .smtp_utf8(true)
+        .connection_reuse(true)
+        .build();
+
+    let now = Local::now();
+
+    // Send mails
+    for ice in &mut ices {
+        if !ice.is_active() {continue;}
+
+        let send_date = ice.get_date();
+        // Date cannot be empty
+        if send_date.is_none() {
+            //TODO log
+            term.write_line(
+                format!("ICE '{}' does not have a date!", ice.get_description()).as_str()
+            );
+            continue;
+        }
+
+        // Check date
+        if send_date.unwrap() <= now {
+            // Send mail
+            let mut builder = ice.to_email();
+            builder.add_from(sender.as_str());
+
+            term.write_line(
+                format!("Sending mail for '{}'", ice.get_description()).as_str()
+            );
+
+            mailer.send(builder.build().unwrap());
+
+            // Reset ICE
+            ice.set_active(false);
+            ice.set_date(None);
+        }
+    }
+
+    // Save any changes
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => term.write_line("ICE mails updated"),
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
+}
 
 /// Activate an ICE mail
 ///
@@ -68,7 +182,7 @@ pub fn activate_ice(term: &Term, conf: &Ini) {
     // Ask for date
     let mut date_string = String::new();
     let mut date: Option<DateTime<Local>> = None;
-    let today = Local::now();
+    let now = Local::now();
 
     while date.is_none() {
         date_string = Input::new("Please specify the date and time (yyyy-mm-dd HH:MM)")
@@ -77,7 +191,7 @@ pub fn activate_ice(term: &Term, conf: &Ini) {
         date = match Local.datetime_from_str(date_string.as_str(), "%F %R") {
             Ok(v) => {
                 // Check if date is valid
-                if v > today {
+                if v > now {
                     Some(v)
                 } else {
                     term.write_line("Date cannot be in the past");
@@ -94,9 +208,9 @@ pub fn activate_ice(term: &Term, conf: &Ini) {
 
     // Update ICE
     edited.set_date(date);
-    edited.set_status(true);
+    edited.set_active(true);
 
-    term.write_line(format!("Activating ICE mail for {}...", edited.get_date()).as_str());
+    term.write_line(format!("Activating ICE mail for {}...", edited.get_date_string()).as_str());
 
     // Save edited ICE
     ices[selected] = edited;
@@ -179,7 +293,7 @@ pub fn deactivate_ice(term: &Term, conf: &Ini) {
     let mut edited = ices[selected].clone();
 
     // Cannot deactivate what is not active
-    if !edited.get_status() {
+    if !edited.is_active() {
         term.write_line("That ICE mail is not active");
         return;
     }
@@ -193,7 +307,7 @@ pub fn deactivate_ice(term: &Term, conf: &Ini) {
 
     // Update ICE
     edited.set_date(None);
-    edited.set_status(false);
+    edited.set_active(false);
 
     term.write_line("Deactivating ICE mail...");
 
@@ -364,7 +478,7 @@ pub fn remove_ice(term: &Term, conf: &Ini) {
 /// * `term` - Terminal abstraction
 /// * `conf` - Application configuration
 pub fn show_ice(term: &Term, conf: &Ini) {
-    let mut ices = match parser::get_ices(&conf) {
+    let ices = match parser::get_ices(&conf) {
         Ok(v) => v,
         Err(e) => {
             term.write_line(format!("Error: {}", e).as_str());
