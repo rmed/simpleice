@@ -2,6 +2,11 @@
 name = "simpleice"
 version = "0.1.0"
 authors = ["Rafael Medina García <rafamedgar@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/rmed/simpleice"
+readme = "README.md"
+keywords = ["emergency", "email", "scheduled"]
+categories = ["command-line-utilities", "email"]
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
