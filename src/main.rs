@@ -107,7 +107,7 @@ fn main() {
         "activate" => commands::activate_ice(&term, &conf),
         "check" => (),
         "daemon" => (),
-        "deactivate" => (),
+        "deactivate" => commands::deactivate_ice(&term, &conf),
         "edit" => commands::edit_ice(&term, &conf),
         "list" => commands::list_ices(&term, &conf),
         "new" => commands::create_ice(&term, &conf),

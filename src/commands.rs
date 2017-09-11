@@ -35,7 +35,7 @@ use parser::Ice;
 /// Activate an ICE mail
 ///
 /// During activation, the user is asked for the date in which the mail should
-/// be sent
+/// be sent. Note that his function overrides any activation already in place.
 ///
 /// # Arguments
 ///
@@ -96,6 +96,8 @@ pub fn activate_ice(term: &Term, conf: &Ini) {
     edited.set_date(date);
     edited.set_status(true);
 
+    term.write_line(format!("Activating ICE mail for {}...", edited.get_date()).as_str());
+
     // Save edited ICE
     ices[selected] = edited;
     match parser::write_ices(&conf, &ices) {
@@ -142,6 +144,63 @@ pub fn create_ice(term: &Term, conf: &Ini) {
 
     match parser::write_ices(&conf, &ices) {
         Ok(_) => term.write_line("New ICE mail created"),
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
+}
+
+/// Deactivate an ICE mail
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn deactivate_ice(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Select an ICE to deactivate
+    let mut selection = Select::new();
+    for ice in &ices {
+        selection.item(ice.get_status_line().as_str());
+    }
+
+    term.write_line("Select an ICE mail to deactivate\n");
+    let selected = selection.default(0).interact().unwrap();
+    let mut edited = ices[selected].clone();
+
+    // Cannot deactivate what is not active
+    if !edited.get_status() {
+        term.write_line("That ICE mail is not active");
+        return;
+    }
+
+    if !Confirmation::new(format!(
+        "Do you want to deactivate '{}'?", edited.get_description()
+    ).as_str()).interact().unwrap() {
+        term.write_line("Operation cancelled");
+        return;
+    }
+
+    // Update ICE
+    edited.set_date(None);
+    edited.set_status(false);
+
+    term.write_line("Deactivating ICE mail...");
+
+    // Save edited ICE
+    ices[selected] = edited;
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => term.write_line("ICE mail deactivated"),
         Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
     };
 }
