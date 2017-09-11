@@ -69,12 +69,21 @@ impl Ice {
         self.description = description;
     }
 
-    /// Get the date in dd/mm/yyyy format
+    /// Get the date in yyyy-mm-dd format
     pub fn get_date(&self) -> String {
         match self.send_date {
-            Some(v) => v.format("%d/%m/%Y").to_string(),
+            Some(v) => v.format("%F %R").to_string(),
             None => "Unknown".to_string()
         }
+    }
+
+    /// Update the date of the ICE mail
+    ///
+    /// # Arguments
+    ///
+    /// * `new_date` - New date to use (or None if the mail is disabled)
+    pub fn set_date(&mut self, new_date: Option<DateTime<Local>>) {
+        self.send_date = new_date;
     }
 
     /// Get the mail recipients
@@ -104,6 +113,20 @@ impl Ice {
     /// * `message` - New message to use
     pub fn set_message(&mut self, message: String) {
         self.message = message;
+    }
+
+    /// Get the status of the ICE mail
+    pub fn get_status(&self) -> bool {
+        self.active
+    }
+
+    /// Update the status of the ICE mail
+    ///
+    /// # Arguments
+    ///
+    /// * `status` - New status for the ICE mail
+    pub fn set_status(&mut self, status: bool) {
+        self.active = status;
     }
 
     /// Get a short line specifying the status of the ICE and the scheduled

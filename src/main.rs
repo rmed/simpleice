@@ -51,9 +51,11 @@ fn main() {
         .about("Schedule emails in case of emergency")
         .arg(Arg::with_name("command")
             .possible_values(&[
+                "activate",
                 "create-config",
                 "check",
                 "daemon",
+                "deactivate",
                 "edit",
                 "list",
                 "new",
@@ -64,9 +66,11 @@ fn main() {
             .takes_value(true)
             .long_help("\
                 Available commands:\n\n\
+                activate            Set delivery date and activate an ICE mail\n\
                 create-config       Create empty configuration file\n\
                 check               Check if there are scheduled emails to send\n\
                 daemon              Run in daemon mode\n\
+                deactivate          Deactivate an active ICE mail\n\
                 edit                Edit an existing ICE mail\n\
                 list                List existing ICE mails\n\
                 new                 Create new ICE mail\n\
@@ -100,8 +104,10 @@ fn main() {
 
     // Check command to run
     match command {
+        "activate" => commands::activate_ice(&term, &conf),
         "check" => (),
         "daemon" => (),
+        "deactivate" => (),
         "edit" => commands::edit_ice(&term, &conf),
         "list" => commands::list_ices(&term, &conf),
         "new" => commands::create_ice(&term, &conf),

@@ -24,12 +24,85 @@
 
 use std::error::Error;
 
+use chrono::prelude::*;
 use console::{Term, style};
 use dialoguer::{Confirmation, Editor, Input, Select};
 use ini::Ini;
 
 use parser;
 use parser::Ice;
+
+/// Activate an ICE mail
+///
+/// During activation, the user is asked for the date in which the mail should
+/// be sent
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn activate_ice(term: &Term, conf: &Ini) {
+    let mut ices = match parser::get_ices(&conf) {
+        Ok(v) => v,
+        Err(e) => {
+            term.write_line(format!("Error: {}", e).as_str());
+            return;
+        }
+    };
+
+    if ices.is_empty() {
+        term.write_line("No ICE mails to show");
+        return;
+    }
+
+    // Select an ICE to activate
+    let mut selection = Select::new();
+    for ice in &ices {
+        selection.item(ice.get_status_line().as_str());
+    }
+
+    term.write_line("Select an ICE mail to activate\n");
+    let selected = selection.default(0).interact().unwrap();
+    let mut edited = ices[selected].clone();
+
+    // Ask for date
+    let mut date_string = String::new();
+    let mut date: Option<DateTime<Local>> = None;
+    let today = Local::now();
+
+    while date.is_none() {
+        date_string = Input::new("Please specify the date and time (yyyy-mm-dd HH:MM)")
+            .interact().unwrap();
+
+        date = match Local.datetime_from_str(date_string.as_str(), "%F %R") {
+            Ok(v) => {
+                // Check if date is valid
+                if v > today {
+                    Some(v)
+                } else {
+                    term.write_line("Date cannot be in the past");
+                    None
+                }
+            },
+            Err(e) => {
+                term.write_line("Invalid date format, try again");
+                println!("{}", e);
+                None
+            }
+        };
+    }
+
+    // Update ICE
+    edited.set_date(date);
+    edited.set_status(true);
+
+    // Save edited ICE
+    ices[selected] = edited;
+    match parser::write_ices(&conf, &ices) {
+        Ok(_) => term.write_line("ICE mail activated"),
+        Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
+    };
+}
 
 /// Create a new ICE mail
 ///
@@ -99,6 +172,7 @@ pub fn edit_ice(term: &Term, conf: &Ini) {
         selection.item(ice.get_description().as_str());
     }
 
+    term.write_line("Select an ICE mail to edit\n");
     let selected = selection.default(0).interact().unwrap();
     let mut edited = ices[selected].clone();
 
@@ -200,6 +274,7 @@ pub fn remove_ice(term: &Term, conf: &Ini) {
         selection.item(ice.get_description().as_str());
     }
 
+    term.write_line("Select an ICE mail to remove\n");
     let selected = selection.default(0).interact().unwrap();
 
     // Ask for confirmation
