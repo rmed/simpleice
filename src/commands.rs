@@ -23,6 +23,7 @@
 /// Application commands
 
 use std::error::Error;
+use std::{thread, time};
 
 use chrono::prelude::*;
 use console::{Term, style};
@@ -144,6 +145,24 @@ pub fn check(term: &Term, conf: &Ini) {
         Ok(_) => term.write_line("ICE mails updated"),
         Err(e) => term.write_line(format!("Error: {}" ,e.description()).as_str())
     };
+}
+
+/// Run in daemon mode
+///
+/// The daemon mode is an infinite loop that runs the `check()` function every
+/// hour. Note that other periodic execution mechanisms, such as cron, are
+/// preferred.
+///
+/// # Arguments
+///
+/// * `term` - Terminal abstraction
+/// * `conf` - Application configuration
+pub fn daemon(term: &Term, conf: &Ini) {
+    loop {
+        check(term, conf);
+
+        thread::sleep(time::Duration::from_secs(3600));
+    }
 }
 
 /// Activate an ICE mail

@@ -109,7 +109,7 @@ fn main() {
     match command {
         "activate" => commands::activate_ice(&term, &conf),
         "check" => commands::check(&term, &conf),
-        "daemon" => (),
+        "daemon" => commands::daemon(&term, &conf),
         "deactivate" => commands::deactivate_ice(&term, &conf),
         "edit" => commands::edit_ice(&term, &conf),
         "list" => commands::list_ices(&term, &conf),
